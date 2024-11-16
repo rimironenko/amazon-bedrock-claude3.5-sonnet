@@ -1,115 +1,124 @@
-# Text generation via ApiGateway -> Lambda -> Bedrock
+# Building Generative AI application RAG with Amazon Aurora and Amazon Bedrock Knowledge Base
 
-![architecture](architecture/architecture.png)
+Amazon Bedrock is the easiest way to build and scale generative AI applications with foundational models (FMs) on AWS.
+FMs are
+trained on vast quantities of data, allowing them to be used to answer questions on a variety of subjects. However, if
+you want to use an FM to answer questions about your private data that you have stored in your Amazon Simple Storage
+Service (Amazon S3) bucket or Amazon Aurora PostgreSQL-Compatible Edition database, you need to use a technique known as
+Retrieval Augmented Generation (RAG) to provide relevant answers for your customers.
 
-This pattern demonstrates how to expose an endpoint to invoke models in Amazon Bedrock.
+### Architecture
 
-Note: this pattern includes a layer with a custom version of boto3. Using an outdated boto3 version will result in an ["unknown service error"](https://repost.aws/knowledge-center/lambda-python-runtime-errors)
+![architecture](docs/architecture.png)
 
-Important: this application uses various AWS services and there are costs associated with these services after the Free Tier usage - please see the [AWS Pricing page](https://aws.amazon.com/pricing/) for details. You are responsible for any AWS costs incurred. No warranty is implied in this example.
+As the test file, Postgres PDF tutorial is used.
 
 ### Requirements
 
-* [Create an AWS account](https://portal.aws.amazon.com/gp/aws/developer/registration/index.html) if you do not already have one and log in. The IAM user that you use must have sufficient permissions to make necessary AWS service calls and manage AWS resources.
+* [Create an AWS account](https://portal.aws.amazon.com/gp/aws/developer/registration/index.html) if you do not already
+  have one and log in. The IAM user that you use must have sufficient permissions to make necessary AWS service calls
+  and manage AWS resources.
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) installed and configured
 * [Git Installed](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-* [AWS Serverless Application Model](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html) (AWS SAM) installed
+* [Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) installed
 
 ## Amazon Bedrock setup instructions
-You must request access to a model before you can use it. If you try to use the model (with the API or console) before you have requested access to it, you receive an error message. For more information, see [Model access](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html).
 
-1. In the AWS console, select the region from which you want to access Amazon Bedrock. At the time of writing, Amazon Bedrock is available in us-east-1 (N. Virginia) and us-west-2 (Oregon) regions.
+You must request access to a model before you can use it. If you try to use the model (with the API or console) before
+you have requested access to it, you receive an error message. For more information,
+see [Model access](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html).
 
-    ![Region Selection](bedrock_setup/region-selection.png)
+1. In the AWS console, select the region from which you want to access Amazon Bedrock. We recommend to use us-east-1 (N.
+   Virginia) region where all Bedrock models are available.
 
-1. Find **Amazon Bedrock** by searching in the AWS console.
+   ![Region Selection](docs/bedrock_setup_1.png)
 
-    ![Bedrock Search](bedrock_setup/bedrock-search.png)
+2. Find **Amazon Bedrock** by searching in the AWS console.
 
-1. Expand the side menu.
+   ![Bedrock Search](docs/bedrock_setup_2.png)
 
-    ![Bedrock Expand Menu](bedrock_setup/bedrock-menu-expand.png)
+3. Expand the side menu and select **Model access**.
 
-1. From the side menu, select **Model access**.
+   ![Bedrock Expand Menu](docs/bedrock_setup_3.png)
 
-    ![Model Access](bedrock_setup/model-access-link.png)
+4. Select the **Edit** button.
 
-1. Select the **Edit** button.
+   ![Model Access View](bedrock_setup/model-access-view.png)
 
-    ![Model Access View](bedrock_setup/model-access-view.png)
+5. Use the checkboxes to select the models you wish to enable. This guideline requires **Titan Text Embeddings V2** and
+   **Claude 3.5 Sonnet** models. Click **Save
+   changes** to activate the models in your account. Please feel free to
+   experiment with other models if you want to.
 
-6. Use the checkboxes to select the models you wish to enable. Review the applicable EULAs as needed. Click **Save changes** to activate the models in your account. For this pattern we only need Anthropic/Claude but feel free to experiment with others.
-
-## Deployment Instructions
+## Deployment
 
 1. Create a new directory, navigate to that directory in a terminal and clone the GitHub repository:
-    ``` 
-    git clone https://github.com/aws-samples/serverless-patterns
+   ```bash
+   git clone git@github.com:set-university/genai-workshops.git
+   ```
+2. Change directory to the pattern directory:
+    ```bash
+    cd workshop4
     ```
-1. Change directory to the pattern directory:
+3. Init terraform:
+    ```bash
+    terraform init
     ```
-    cd serverless-patterns/apigw-lambda-bedrock-cdk-python
+4. Download terraform modules:
+    ```bash
+    terraform get
     ```
-1. Create virtual environment for Python
+5. Deploy the infrastructure:
+    ```bash
+    terraform plan
+    terraform apply --auto-approve 
     ```
-    python3 -m venv .venv
-    ```
-    For a Windows platform, activate the virtualenv like this:
-    ```
-    .venv\Scripts\activate.bat
-    ```
-1. Install the Python required dependencies:
-    ```
-    pip install -r requirements.txt
-    ```
-1. Run the command below to bootstrap your account. CDK needs it to deploy
-    ```
-    cdk bootstrap
-    ```
-1. Review the CloudFormation template the cdk generates for you stack using the following AWS CDK CLI command:
-    ```
-    cdk synth
-    ```
-1. From the command line, use AWS CDK to deploy the AWS resources.
-    ```
-    cdk deploy
-    ```
-1. After deployment completes, take a look at the Outputs section. There will be an entry containing the URL of the API Gateway resource you just created. Copy that URL as you'll need it for your tests.
+6. If needed, customize Terraform variables using custom .tfwars file
+7. Wait until it's complected. It takes approximately 15 minutes.
+8. After deployment completes, take a look at the Outputs section. There will be 'lambda_function_url ' entry containing
+   the Lambda URL to
+   test the infrastructure. Copy that URL as you'll need it for your tests.
 
-    The format of the URL will be something like `https://{id}.execute-api.{region}.amazonaws.com/prod`
+## Sync the Bedrock knowledge base with the datasource in S3
 
+1. Go to Bedrock service in AWS console.
+2. Click **Knowledge bases** left nav menu item.
+3. Click the knowledge base created via Terraform.
 
-## How it works
+   ![kb_sync_1](docs/kb_sync_1.png)
 
-CDK will create an Api Gateway, along with a resource and a POST method. There's a AWS Lambda function that will be taking the prompt and invoking an Amazon Bedrock model (anthropic.claude-v2) synchronously. If you wish to try other models, make sure to modify the policy attached to the Lambda function and invoke the right model. 
+4. Select the S3 data source and click ***Sync** button.
 
-This pattern is a synchronous pattern. For an asynchronous approach, please check [this](../apigw-rest-api-sqs-lambda-bedrock-cdk) pattern that involves the usage of Amazon SQS.
+   ![kb_sync_2](docs/kb_sync_2.png)
+
+5. Wait for the sync completion (~ 5-10 minutes).
 
 ## Testing
 
-We'll be making requests to the  *text_gen* endpoint with a desired prompt.
+Follow the example below and replace `{your-lambda-url}` with your Lambda url from step 8 of Deployment.
 
-Follow the example below and replace `{your-api-url}` with your api url from step 8. 
+```bash
+ curl -X POST 'https://{your-lambda-url}/' \
+   -H 'content-type: application/json' \
+   -d '{ "prompt": "what are the postgres versions?" }'
+```
 
-    ```
-    curl -X POST \
-    {your-api-url}/text_gen \
-    -H "Content-Type: application/json" \
-    -d '{"prompt": "Write an email to my department announcing I will lead a gen-ai workshop with Amazon Bedrock"}'
-    ```
+The response might look like as follows:
 
+```text
+{"genai_response": "Current PostgreSQL version numbers consist of a major and a minor version number. For example, in version 10.1, 10 is the major version and 1 is the minor version. This indicates it's the first minor release of major version 10.\n\nFor PostgreSQL versions before 10.0, the version numbers consisted of three numbers, such as 9.5.3. In these cases, the major version is represented by the first two digit groups (e.g., 9.5), and the minor version is the third number (e.g., 3).\n\nMinor releases are always compatible with earlier and later minor releases of the same major version. For instance, version 10.1 is compatible with 10.0 and 10.6. Similarly, 9.5.3 is compatible with 9.5.0, 9.5.1, and 9.5.6."}
+```
 
 ## Cleanup
- 
-1. Run below script in the `apigw-lambda-bedrock-cdk-python` directory to delete AWS resources created by this sample stack.
+
+1. Run terraform destroy command.
     ```bash
-    cdk destroy
+    terraform destroy
+   # type 'yes' to confirm
     ```
+2. Wait until the AWS infrastructure will be destroyed (~ 10-15 minutes).
 
 ## Extra Resources
-* [Bedrock Api Reference](https://docs.aws.amazon.com/bedrock/latest/APIReference/welcome.html)
 
-----
-Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-SPDX-License-Identifier: MIT-0
+* [Retrieve data and generate AI responses with knowledge bases](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html)
+* [Terraform docs](https://developer.hashicorp.com/terraform/docs)
