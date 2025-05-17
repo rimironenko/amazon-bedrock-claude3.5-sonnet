@@ -5,16 +5,16 @@ variable "aws_region" {
 }
 
 variable "genai_foundational_model_id" {
-  description = "GenAI Bedrock Foundational model to use"
+  description = "Bedrock Foundational model to use for RAG"
   type        = string
   default     = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 }
 
 variable "aws_resource_tags" {
   description = "A map of tags to add to AWS resources"
-  type = map(string)
+  type        = map(string)
   default = {
-    Application = "set-genai-module2"
+    Application = "bedrock-rag-workshop"
   }
 }
 

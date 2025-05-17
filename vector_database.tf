@@ -3,7 +3,7 @@
 ################################################################################
 
 resource "aws_iam_role" "vector_store_cluster_role" {
-  name = "genai-cluster-role-${random_pet.this.id}"
+  name = "bedrock-rag-cluster-role-${random_pet.this.id}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -13,6 +13,14 @@ resource "aws_iam_role" "vector_store_cluster_role" {
         Sid    = ""
         Principal = {
           Service = "rds.amazonaws.com"
+        }
+      },
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "bedrock.amazonaws.com"
         }
       },
     ]
@@ -45,7 +53,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.15.0"
 
-  name = "genai-vpc-${random_pet.this.id}"
+  name = "bedrock-rag-vpc-${random_pet.this.id}"
   cidr = local.vpc_cidr
 
   azs              = local.azs
@@ -60,7 +68,7 @@ module "aurora_postgresql_v2" {
   source  = "terraform-aws-modules/rds-aurora/aws"
   version = "9.10.0"
 
-  name                 = "genai-bedrock-vector-store-${random_pet.this.id}"
+  name                 = "bedrock-rag-vector-store-${random_pet.this.id}"
   engine               = var.rds_engine
   engine_mode          = "provisioned"
   engine_version       = var.rds_engine_version
@@ -100,7 +108,7 @@ module "aurora_postgresql_v2" {
 }
 
 module "vector_store_bedrock_secret" {
-  source = "terraform-aws-modules/secrets-manager/aws"
+  source  = "terraform-aws-modules/secrets-manager/aws"
   version = "1.3.1"
 
   # Secret

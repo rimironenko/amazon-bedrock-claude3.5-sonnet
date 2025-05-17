@@ -1,3 +1,9 @@
 /cdk.out/
 /.idea/
 /.venv/
+.terraform
+builds
+.terraform*
+terraform.tfstate
+terraform.tfstate*
+.DS_Store
